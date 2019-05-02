@@ -17,11 +17,13 @@ package com.google.idea.blaze.base.ideinfo;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.devtools.intellij.ideinfo.IntellijIdeInfo;
 import com.google.idea.blaze.base.model.primitives.Label;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -30,6 +32,7 @@ import javax.annotation.Nullable;
 public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.AndroidIdeInfo> {
   private final ImmutableList<AndroidResFolder> resources;
   @Nullable private final ArtifactLocation manifest;
+  private final Map<String, String> manifestValues;
   @Nullable private final LibraryArtifact idlJar;
   @Nullable private final LibraryArtifact resourceJar;
   private final boolean hasIdlSources;
@@ -42,6 +45,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
       @Nullable String resourceJavaPackage,
       boolean generateResourceClass,
       @Nullable ArtifactLocation manifest,
+      Map<String, String> manifestValues,
       @Nullable LibraryArtifact idlJar,
       @Nullable LibraryArtifact resourceJar,
       boolean hasIdlSources,
@@ -50,6 +54,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
     this.resourceJavaPackage = resourceJavaPackage;
     this.generateResourceClass = generateResourceClass;
     this.manifest = manifest;
+    this.manifestValues = manifestValues;
     this.idlJar = idlJar;
     this.resourceJar = resourceJar;
     this.hasIdlSources = hasIdlSources;
@@ -64,6 +69,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
         Strings.emptyToNull(proto.getJavaPackage()),
         proto.getGenerateResourceClass(),
         proto.hasManifest() ? ArtifactLocation.fromProto(proto.getManifest()) : null,
+        proto.getManifestValuesMap(),
         proto.hasIdlJar() ? LibraryArtifact.fromProto(proto.getIdlJar()) : null,
         proto.hasResourceJar() ? LibraryArtifact.fromProto(proto.getResourceJar()) : null,
         proto.getHasIdlSources(),
@@ -76,6 +82,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
   public IntellijIdeInfo.AndroidIdeInfo toProto() {
     IntellijIdeInfo.AndroidIdeInfo.Builder builder =
         IntellijIdeInfo.AndroidIdeInfo.newBuilder()
+            .putAllManifestValues(manifestValues)
             .addAllResFolders(ProtoWrapper.mapToProtos(resources))
             .setGenerateResourceClass(generateResourceClass)
             .setHasIdlSources(hasIdlSources);
@@ -99,6 +106,10 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
   @Nullable
   public ArtifactLocation getManifest() {
     return manifest;
+  }
+
+  public Map<String, String> getManifestValues() {
+    return manifestValues;
   }
 
   @Nullable
@@ -137,6 +148,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
   public static class Builder {
     private List<AndroidResFolder> resources = Lists.newArrayList();
     private ArtifactLocation manifest;
+    private final ImmutableMap.Builder<String, String> manifestValues = ImmutableMap.builder();
     private LibraryArtifact idlJar;
     private LibraryArtifact resourceJar;
     private boolean hasIdlSources;
@@ -146,6 +158,11 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
 
     public Builder setManifestFile(ArtifactLocation artifactLocation) {
       this.manifest = artifactLocation;
+      return this;
+    }
+
+    public Builder putManifestValue(String attributeOrPlaceholder, String value) {
+      manifestValues.put(attributeOrPlaceholder, value);
       return this;
     }
 
@@ -201,6 +218,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
           resourceJavaPackage,
           generateResourceClass,
           manifest,
+          manifestValues.build(),
           idlJar,
           resourceJar,
           hasIdlSources,
@@ -221,6 +239,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
         && generateResourceClass == that.generateResourceClass
         && Objects.equals(resources, that.resources)
         && Objects.equals(manifest, that.manifest)
+        && Objects.equals(manifestValues, that.manifestValues)
         && Objects.equals(idlJar, that.idlJar)
         && Objects.equals(resourceJar, that.resourceJar)
         && Objects.equals(resourceJavaPackage, that.resourceJavaPackage)
@@ -232,6 +251,7 @@ public final class AndroidIdeInfo implements ProtoWrapper<IntellijIdeInfo.Androi
     return Objects.hash(
         resources,
         manifest,
+        manifestValues,
         idlJar,
         resourceJar,
         hasIdlSources,
